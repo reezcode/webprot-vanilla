@@ -78,16 +78,16 @@
     container.appendChild(row);
   }
 
-  function addMeta(container, label, value) {
+  function addStickyRow(container, label, value) {
     var row = document.createElement('div');
-    row.className = 'wv-diag-meta-row';
+    row.className = 'ua-sticky-row';
 
     var labelSpan = document.createElement('span');
-    labelSpan.className = 'wv-diag-meta-label';
+    labelSpan.className = 'ua-sticky-label';
     labelSpan.textContent = label;
 
     var valueSpan = document.createElement('span');
-    valueSpan.className = 'wv-diag-meta-value';
+    valueSpan.className = 'ua-sticky-value';
     valueSpan.textContent = value || 'n/a';
 
     row.appendChild(labelSpan);
@@ -115,13 +115,6 @@
     header.appendChild(pill);
     header.appendChild(score);
 
-    var meta = document.createElement('div');
-    meta.className = 'wv-diag-meta';
-
-    addMeta(meta, 'UA', data.userAgent);
-    addMeta(meta, 'UA Brands', data.userAgentBrands);
-    addMeta(meta, 'UA Platform', data.userAgentPlatform);
-
     var title = document.createElement('div');
     title.className = 'wv-diag-title';
     title.textContent = 'Detection details';
@@ -139,11 +132,36 @@
     addRow(list, 'Safari token missing in UA', data.signals.noSafariInUA);
 
     wrapper.appendChild(header);
-    wrapper.appendChild(meta);
     wrapper.appendChild(title);
     wrapper.appendChild(list);
 
     container.appendChild(wrapper);
+  }
+
+  function renderStickyUA(data) {
+    var existing = document.getElementById('ua-sticky');
+    var bar = existing || document.createElement('div');
+
+    bar.id = 'ua-sticky';
+    bar.className = 'ua-sticky';
+
+    var inner = document.createElement('div');
+    inner.className = 'ua-sticky-inner';
+
+    addStickyRow(inner, 'User agent', data.userAgent);
+    addStickyRow(inner, 'UA brands', data.userAgentBrands);
+    addStickyRow(inner, 'UA platform', data.userAgentPlatform);
+
+    bar.textContent = '';
+    bar.appendChild(inner);
+
+    if (!existing) {
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
+
+    requestAnimationFrame(function () {
+      document.body.style.setProperty('--ua-sticky-offset', bar.offsetHeight + 'px');
+    });
   }
 
   function getPageUrl() {
@@ -169,6 +187,8 @@
       window.location.replace('blocked.html?from=' + encodeURIComponent(from));
       return;
     }
+
+    renderStickyUA(data);
 
     var diagnostics = document.getElementById('diagnostics');
     if (diagnostics) {
