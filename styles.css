@@ -9,6 +9,8 @@ body {
   font-family: Georgia, serif;
   color: #f0f0f5;
   background: #07070d;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
 }
 
 .noise {
@@ -180,6 +182,7 @@ body {
   transition: background 0.2s, transform 0.15s;
   margin-bottom: 20px;
   font-family: monospace;
+  justify-content: center;
 }
 
 .open-btn:hover {
@@ -325,8 +328,81 @@ body {
   word-break: break-word;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
+  .home-root,
+  .webview-block-root {
+    align-items: flex-start;
+    padding: 32px 18px 48px;
+  }
+
+  .hero {
+    text-align: left;
+  }
+
+  .badge {
+    margin-bottom: 20px;
+  }
+
+  .headline {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .sub {
+    max-width: 100%;
+    margin: 0 0 28px;
+  }
+
   .card {
-    padding: 36px 24px;
+    padding: 32px 20px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .browsers {
+    padding: 14px;
+  }
+
+  .open-btn {
+    width: 100%;
+  }
+
+  .wv-diag-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .wv-diag-status {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .headline {
+    font-size: clamp(1.8rem, 10vw, 2.6rem);
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+  }
+
+  .icon-wrap {
+    width: 68px;
+    height: 68px;
+  }
+
+  .browser-chip {
+    font-size: 0.78rem;
+    padding: 6px 12px;
+  }
+
+  .open-btn {
+    padding: 12px 18px;
   }
 }
