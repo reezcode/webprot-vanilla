@@ -27,7 +27,7 @@ body {
   justify-content: center;
   padding: 40px 24px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .hero {
@@ -84,7 +84,7 @@ body {
   justify-content: center;
   padding: 24px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   background: #0a0a0f;
 }
 
