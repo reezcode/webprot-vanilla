@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-page="blocked">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Access blocked</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body class="webview-block-root">
+    <div class="noise"></div>
+
+    <div class="card">
+      <div class="icon-wrap">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2.5" />
+          <path d="M16 16L32 32M32 16L16 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      </div>
+
+      <h1 class="title">WebView blocked</h1>
+      <p class="subtitle">
+        This website cannot be opened inside an embedded app browser. Please
+        use a supported browser to continue.
+      </p>
+
+      <div class="browsers">
+        <span class="browser-label">Recommended browsers</span>
+        <div class="browser-list">
+          <div class="browser-chip">Chrome</div>
+          <div class="browser-chip">Firefox</div>
+          <div class="browser-chip">Edge</div>
+          <div class="browser-chip">Brave</div>
+        </div>
+      </div>
+
+      <a id="open-chrome" class="open-btn" href="#" style="display: none;">
+        Open in Chrome
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M3 8h10M9 4l4 4-4 4"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </a>
+
+      <p class="copy-hint">
+        Or copy the URL from your app address bar and paste it into your browser.
+      </p>
+
+      <div id="diagnostics"></div>
+    </div>
+  </body>
+</html>
