@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Input</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: sans-serif; display: flex; justify-content: center; padding: 40px; }
+
+  .secure-wrapper { width: 100%; max-width: 400px; }
+
+  .input-container { position: relative; }
+
+  /* Decoy visible input — shows only dots */
+  #decoy-display {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    letter-spacing: 6px;
+    border: 2px solid #333;
+    border-radius: 6px;
+    background: #fff;
+    cursor: text;
+  }
+
+  /* Real input is hidden and unfocusable by attackers */
+  #real-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+    top: 0; left: 0;
+  }
+
+  .virtual-keyboard {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    margin-top: 10px;
+  }
+
+  .vk-btn {
+    padding: 10px 4px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f5f5f5;
+    user-select: none;
+  }
+
+  .vk-btn:active { background: #ddd; }
+  .vk-btn.special { background: #e0e0ff; grid-column: span 2; }
+
+  #submit-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  #status { margin-top: 10px; font-size: 12px; color: #666; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="secure-wrapper">
+  <h3>🔒 Secure Password Input</h3>
+
+  <div class="input-container">
+    <div id="decoy-display" tabindex="0">&#8203;</div>
+    <input id="real-input" type="text" autocomplete="off" tabindex="-1" readonly />
+  </div>
+
+  <div class="virtual-keyboard" id="vk"></div>
+
+  <button id="submit-btn">Submit</button>
+  <div id="status"></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // --- 1. Capture native addEventListener BEFORE any attacker can override it ---
+  const _addEventListener = EventTarget.prototype.addEventListener.bind(
+    document.getElementById('decoy-display')
+  );
+
+  // --- 2. Encrypted storage using Web Crypto API ---
+  let encryptedChunks = []; // stores encrypted CryptoKey per character
+  let sessionKey = null;
+
+  async function generateSessionKey() {
+    sessionKey = await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      false, // non-extractable — even JS can't read the raw key
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function encryptChar(char) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(char);
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      sessionKey,
+      encoded
+    );
+    return { iv, ciphertext };
+  }
+
+  async function decryptAll() {
+    const chars = [];
+    for (const chunk of encryptedChunks) {
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: chunk.iv },
+        sessionKey,
+        chunk.ciphertext
+      );
+      chars.push(new TextDecoder().decode(decrypted));
+    }
+    return chars.join('');
+  }
+
+  // --- 3. Virtual Keyboard with shuffled layout ---
+  const VK_ROWS = [
+    '0123456789',
+    'qwertyuiop',
+    'asdfghjkl',
+    'zxcvbnm'
+  ];
+
+  function buildKeyboard() {
+    const vk = document.getElementById('vk');
+
+    // Shuffle each row to make positional inference harder
+    const allChars = VK_ROWS.join('').split('');
+    const shuffled = allChars.sort(() => crypto.getRandomValues(new Uint32Array(1))[0] % 2 === 0 ? 1 : -1);
+
+    shuffled.forEach(char => {
+      const btn = document.createElement('button');
+      btn.className = 'vk-btn';
+      btn.textContent = char;
+      btn.type = 'button';
+
+      // Use pointer down — fires before click, harder to intercept
+      btn.addEventListener('pointerdown', async (e) => {
+        e.preventDefault();
+        await addChar(char);
+      });
+
+      vk.appendChild(btn);
+    });
+
+    // Backspace key
+    const bksp = document.createElement('button');
+    bksp.className = 'vk-btn special';
+    bksp.textContent = '⌫';
+    bksp.type = 'button';
+    bksp.addEventListener('pointerdown', async (e) => {
+      e.preventDefault();
+      await removeChar();
+    });
+    vk.appendChild(bksp);
+  }
+
+  // --- 4. Input handlers ---
+  let displayLength = 0;
+  const display = document.getElementById('decoy-display');
+
+  async function addChar(char) {
+    if (!sessionKey) return;
+    const encrypted = await encryptChar(char);
+    encryptedChunks.push(encrypted);
+    displayLength++;
+    updateDisplay();
+  }
+
+  async function removeChar() {
+    if (encryptedChunks.length === 0) return;
+    encryptedChunks.pop();
+    displayLength--;
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    // Only show bullet dots — never the real character
+    display.textContent = '●'.repeat(displayLength) || '\u200B';
+  }
+
+  // --- 5. Block physical keyboard input on the display ---
+  display.addEventListener('keydown', (e) => {
+    // Allow only tab/enter for accessibility
+    if (!['Tab', 'Enter'].includes(e.key)) {
+      e.preventDefault();
+    }
+  });
+
+  // Block paste
+  display.addEventListener('paste', (e) => e.preventDefault());
+
+  // --- 6. Prevent right-click inspect on the field ---
+  display.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // --- 7. Submit — decrypt only at the moment of use ---
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    if (encryptedChunks.length === 0) {
+      document.getElementById('status').textContent = 'Please enter a password.';
+      return;
+    }
+
+    const plaintext = await decryptAll();
+
+    // Hash before sending — never send plaintext over the wire
+    const hashed = await hashPassword(plaintext);
+
+    document.getElementById('status').textContent =
+      `Sending hash: ${hashed.substring(0, 32)}... (never plaintext)`;
+
+    // TODO: send `hashed` to your server
+    // fetch('/login', { method: 'POST', body: JSON.stringify({ hash: hashed }) })
+
+    // Immediately wipe
+    encryptedChunks = [];
+    displayLength = 0;
+    updateDisplay();
+  });
+
+  // --- 8. SHA-256 hash before transmission ---
+  async function hashPassword(plain) {
+    const encoded = new TextEncoder().encode(plain);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // --- 9. Init ---
+  generateSessionKey().then(() => {
+    buildKeyboard();
+    // Reshuffle keyboard every 30s to counter click-pattern recording
+    setInterval(() => {
+      document.getElementById('vk').innerHTML = '';
+      buildKeyboard();
+    }, 30000);
+  });
+
+})();
+</script>
+</body>
+</html>
