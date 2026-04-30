@@ -115,6 +115,13 @@
     header.appendChild(pill);
     header.appendChild(score);
 
+    var meta = document.createElement('div');
+    meta.className = 'wv-diag-meta';
+
+    addMeta(meta, 'UA', data.userAgent);
+    addMeta(meta, 'UA Brands', data.userAgentBrands);
+    addMeta(meta, 'UA Platform', data.userAgentPlatform);
+
     var title = document.createElement('div');
     title.className = 'wv-diag-title';
     title.textContent = 'Detection details';
@@ -131,17 +138,10 @@
     addRow(list, 'Missing window.chrome.runtime', data.signals.missingChromeRuntime);
     addRow(list, 'Safari token missing in UA', data.signals.noSafariInUA);
 
-    var meta = document.createElement('div');
-    meta.className = 'wv-diag-meta';
-
-    addMeta(meta, 'UA', data.userAgent);
-    addMeta(meta, 'UA Brands', data.userAgentBrands);
-    addMeta(meta, 'UA Platform', data.userAgentPlatform);
-
     wrapper.appendChild(header);
+    wrapper.appendChild(meta);
     wrapper.appendChild(title);
     wrapper.appendChild(list);
-    wrapper.appendChild(meta);
 
     container.appendChild(wrapper);
   }
